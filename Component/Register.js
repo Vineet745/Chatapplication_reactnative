@@ -1,57 +1,44 @@
-import {View, Text, TextInput, TouchableOpacity} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity,ScrollView,Image} from 'react-native';
 import React, {useState} from 'react';
 import Registerstyle from '../Stylesheets/Register';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import {useNavigation} from '@react-navigation/native';
+import uuid from "react-native-uuid"
 
 const Register = props => {
   const navigation = useNavigation();
   const [name, setName] = useState();
   const [age, setAge] = useState();
-  const [pincode, setPincode] = useState();
   const [city, setCity] = useState();
   const [username, setUsername] = useState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
 
   const handleRegister = async () => {
     try {
-      if (
-        name.length > 0 &&
-        password.length > 0 &&
-        age.length > 0 &&
-        pincode.length > 0 &&
-        city.length > 0 &&
-        username.length > 0 &&
-        email.length
-      ) {
-        const isuserCreated = await auth().createUserWithEmailAndPassword(
-          email,
-          password,
-        );
-        console.log('User Created');
-        // Other fields of user
-
-        const userData = {
+        const userId =uuid.v4();
+        firestore().collection("users").doc(userId).set({
           name: name,
           age: age,
-          pincode: pincode,
           city: city,
           username: username,
           email: email,
-        };
-
-        await firestore().collection('users').add(userData);
-      } else {
-        console.warn('Please fill the all fields');
-      }
-      navigation.navigate('Login');
+          userId:userId ,
+        }).then(res =>{
+          console.log("user Created")
+          navigation.navigate('Login');
+        }).catch(error=>{
+          console.log(error)
+        })
+             
     } catch (error) {
       console.log(error);
     }
   };
   return (
+    <ScrollView>
     <View style={Registerstyle.Registermain}>
       <View style={Registerstyle.InputWrapper}>
         <Text style={Registerstyle.headtext}>Register User</Text>
@@ -65,11 +52,6 @@ const Register = props => {
           placeholder="Enter your Age"
           value={age}
           onChangeText={value => setAge(value)}></TextInput>
-        <TextInput
-          style={Registerstyle.inputbox}
-          placeholder="Enter your Pincode"
-          value={pincode}
-          onChangeText={value => setPincode(value)}></TextInput>
         <TextInput
           value={city}
           onChangeText={value => setCity(value)}
@@ -103,13 +85,14 @@ const Register = props => {
             Are you a user?{' '}
             <Text
               style={Registerstyle.link}
-              onPress={() => props.navigation.navigate('Login')}>
+              onPress={() => props.navigation.goBack('Login')}>
               Please Login
             </Text>
           </Text>
         </View>
       </View>
     </View>
+    </ScrollView>
   );
 };
 

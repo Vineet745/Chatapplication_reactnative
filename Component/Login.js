@@ -4,57 +4,70 @@ import Registerstyle from '../Stylesheets/Register';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import {useNavigation} from '@react-navigation/native';
-import {  GoogleSignin,  statusCodes,} from '@react-native-google-signin/google-signin';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Login = props => {
+  // useEffect(() => {
+  //   GoogleSignin.configure()
+  // }, [])
 
-  useEffect(() => {
-    GoogleSignin.configure()
-  }, [])
-  
   //  Google Authetication
 
-  
-  const signIn = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      console.log(userInfo)
-    } catch (error) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log(error)
-        // user cancelled the login flow
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log(error)
-        // operation (e.g. sign in) is in progress already
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log(error)
-        // play services not available or outdated
-      } else {
-        console.log(error)
-        // some other error happened
-      }
-    }
-  };
-
-
+  // const signIn = async () => {
+  //   try {
+  //     await GoogleSignin.hasPlayServices();
+  //     const userInfo = await GoogleSignin.signIn();
+  //     console.log(userInfo)
+  //   } catch (error) {
+  //     if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+  //       console.log(error)
+  //       // user cancelled the login flow
+  //     } else if (error.code === statusCodes.IN_PROGRESS) {
+  //       console.log(error)
+  //       // operation (e.g. sign in) is in progress already
+  //     } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+  //       console.log(error)
+  //       // play services not available or outdated
+  //     } else {
+  //       console.log(error)
+  //       // some other error happened
+  //     }
+  //   }
+  // };
 
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   // HandleLogin
-  const handleLogin = async () => {
-    try {
-      const isUserlogin = await auth().signInWithEmailAndPassword(
-        email,
-        password,
-      );
-      navigation.navigate('Home');
-    } catch (error) {
-      console.log(error);
-    }
+  const handleLogin = () => {
+    firestore()
+      .collection('users')
+      .where('email', '==', email)
+      .get()
+      .then(res => {
+        if (res.docs !== []) {
+          console.log(JSON.stringify(res.docs[0].data()));
+          gotonext(res.docs[0].data().name,
+          res.docs[0].data().email,
+          res.docs[0].data().userId)
+        } else {
+          console.warn('User not found');
+        }
+      })
+      .catch(error => {
+        console.log(error);
+        console.warn('User not found'); 
+      });
   };
+
+const gotonext =async(name,email,userId)=>{
+await AsyncStorage .setItem("NAME",name);
+await AsyncStorage .setItem("EMAIL",email);
+await AsyncStorage .setItem("USERID",userId);
+navigation.navigate("Main");
+};
 
   return (
     <View style={Registerstyle.Registermain}>
@@ -98,7 +111,7 @@ const Login = props => {
               }}>
               Or
             </Text>
-            <TouchableOpacity onPress={()=>signIn()}>
+            <TouchableOpacity onPress={() => signIn()}>
               <Text style={Registerstyle.google}>Login with Google</Text>
             </TouchableOpacity>
           </View>
